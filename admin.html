@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHS Administrator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="admin-body">
+
+<header class="topbar">
+    <div class="brand">
+        <img src="assets/chs-logo.png" alt="CHS Logo" onerror="this.hidden=true">
+        <div>
+            <h2>CHS ADMINISTRATION</h2>
+            <p>SYSTEM MONITORING</p>
+        </div>
+    </div>
+    <a class="back-link" href="index.html">BACK TO HOME</a>
+</header>
+
+<section class="admin-login" id="adminLoginPanel">
+    <h2>ADMIN LOGIN</h2>
+    <p class="admin-subtext">Authorized administrators only</p>
+
+    <form id="adminLoginForm">
+        <label for="adminUsername">USERNAME</label>
+        <input type="text" id="adminUsername"
+               placeholder="Admin username" autocomplete="username" required>
+
+        <label for="adminPassword">PASSWORD</label>
+        <input type="password" id="adminPassword"
+               placeholder="Admin password" autocomplete="current-password" required>
+
+        <button type="submit" class="enter-btn">LOGIN AS ADMIN</button>
+        <p id="adminError" class="error-message" aria-live="polite"></p>
+    </form>
+
+    
+    <p class="demo-note">Please log in your admin account</p>
+</section>
+
+<main class="admin-container" id="adminDashboard" hidden>
+    <div class="admin-card admin-heading">
+        <div>
+            <h2>VISITOR MONITORING DASHBOARD</h2>
+            <p>Commonwealth High School Campus Navigation System</p>
+        </div>
+        <button class="danger-btn" type="button" onclick="adminLogout()">ADMIN LOGOUT</button>
+    </div>
+
+    <div class="admin-card">
+        <h2>VISITOR STATISTICS</h2>
+        <div class="statistics">
+            <div><h3 id="totalVisitors">0</h3><p>Total Visitors</p></div>
+            <div><h3 id="studentCount">0</h3><p>Students</p></div>
+            <div><h3 id="teacherCount">0</h3><p>Teachers</p></div>
+            <div><h3 id="guardianCount">0</h3><p>Guardians</p></div>
+        </div>
+    </div>
+
+    <div class="admin-card">
+        <h2>VISITOR ACTIVITY LOGS</h2>
+        <div class="table-wrapper">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Full Name</th>
+                        <th>User Type</th>
+                        <th>Grade</th>
+                        <th>Section</th>
+                        <th>Login Time</th>
+                        <th>Logout Time</th>
+                    </tr>
+                </thead>
+                <tbody id="visitorRecords"></tbody>
+            </table>
+        </div>
+        <button class="danger-btn clear-btn" type="button" onclick="clearVisitorRecords()">
+            CLEAR ALL RECORDS
+        </button>
+    </div>
+</main>
+
+<script src="js/app.js"></script>
+</body>
+</html>

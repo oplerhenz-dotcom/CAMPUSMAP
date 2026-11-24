@@ -1,0 +1,612 @@
+import * as THREE from "three";
+import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js";
+
+
+const buildings = [
+  {id:"sb1",name:"SB Building 1",type:"office",x:-18,z:-14,w:5,d:9,h:5,color:0xf5e6c8,
+    floors: {
+    ground: ["Room 15", "Room 16", "Comfort Room", "Room 17", "Room 18"],
+    second: ["Office", "Records"],
+    third: ["Meeting Room", "Staff Room"],
+    fourth: ["Storage"]
+  }
+  ,rooms:["Office","Records","Staff Room","Meeting Room"]
+    
+  },
+  
+
+  {id:"castello1",name:"Castello Building 1",type:"classroom",x:-18,z:-5,w:5,d:6,h:5,color:0xfff1d6,rooms:["Room 101","Room 102","Faculty Room","Storage"]},
+
+  {id:"castello2",name:"Castello Building 2",type:"classroom",x:-18,z:1,w:5,d:6,h:5,color:0xfff1d6,rooms:["Room 201","Room 202","Room 203","Faculty Room"]},
+
+  {id:"castello3",name:"Castello Building 3",type:"classroom",x:-18,z:7,w:5,d:6,h:5,color:0xfff1d6,rooms:["Room 301","Room 302","Room 303","Faculty Room"]},
+
+  {id:"castello4",name:"Castello Building 4",type:"classroom",x:-7,z:6,w:6,d:10,h:4,color:0xfff1d6,rooms:["Room 401","Room 402","Room 403","Room 404","Faculty Room"]},
+
+  {id:"castello5",name:"Castello Building 5",type:"classroom",x:-7,z:-5,w:6,d:10,h:4,color:0xfff1d6,rooms:["Room 501","Room 502","Room 503","Faculty Room"]},
+
+  {id:"centennial",name:"Centennial Building",type:"classroom",x:4,z:-17,w:30,d:4,h:5,color:0xfff1d6,rooms:["Room 1","Room 2","Room 3","Faculty Room"]},
+
+  {id:"court",name:"Covered Court 1",type:"facility",x:5,z:-2,w:15,d:5,h:4,color:0xfff1d6,rooms:["Court Floor","Stage","Equipment Room","Bleachers"]},
+
+  {id:"admin",name:"New Admin Building",type:"office",x:5,z:4,w:15,d:5,h:3.2,color:0xfff1d6,rooms:["Principal's Office","Registrar","Guidance Office","Administration"]},
+
+  {id:"simon",name:"Simon Building",type:"classroom",x:24,z:-8,w:5,d:11,h:5,color:0xfff1d6,rooms:["Room 1","Room 2","Room 3","Faculty Room"]},
+
+  {id:"mathay",name:"Mathay Building",type:"classroom",x:24,z:2,w:5,d:9,h:5,color:0xfff1d6,rooms:["Room 1","Room 2","Room 3","Faculty Room"]},
+
+  {id:"liban",name:"Liban Building",type:"classroom",x:24,z:12,w:5,d:9,h:5,color:0xfff1d6,rooms:["Room 1","Room 2","Room 3","Faculty Room"]},
+  
+  {id:"sb2",name:"SB Building 2",type:"office",x:4,z:19,w:43,d:4,h:5,color:0xfff1d6,rooms:["Office","Classroom A","Classroom B","Storage"]},
+
+  {id:"Garden",name:"CHS Garden",type:"classroom",x:5,z:-7,w:10,d:5,h:1,color:0xef9258, rooms: ["Garden Area", "Seating Area"]},
+
+];
+
+const border = [
+{id:"b1",name:"Border 1",type:"office",x:1,z:23,w:53,d:2,h:3,color:0xd8c3a5},
+
+  {id:"b2",name:"Border 2",type:"office",x:28,z:1,w:2,d:45,h:3,color:0xd8c3a5},
+
+  {id:"b3",name:"Border 3",type:"office",x:2 ,z:-22,w:53,d:2,h:3,color:0xd8c3a5},
+
+  {id:"b4",name:"Border 4",type:"office",x:-24,z:-5,w:2,d:34,h:3,color:0xd8c3a5}
+
+];
+
+
+const mount = document.querySelector("#threeCanvas");
+if (!mount) {
+  throw new Error('Campus map container "#threeCanvas" was not found. Check dashboard.html.');
+}
+const scene = new THREE.Scene();
+
+// CREATE BORDERS WITHOUT ROOFS
+for (const b of border) {
+    const group = new THREE.Group();
+
+    group.position.set(b.x, 0, b.z);
+
+    const material = new THREE.MeshStandardMaterial({
+        color: b.color,
+        roughness: 0.8
+    });
+
+    const wall = new THREE.Mesh(
+        new THREE.BoxGeometry(b.w, b.h, b.d),
+        material
+    );
+
+    wall.position.y = b.h / 2;
+    wall.castShadow = true;
+    wall.receiveShadow = true;
+
+    group.add(wall);
+    scene.add(group);
+}
+
+scene.background = new THREE.Color();
+
+const camera = new THREE.PerspectiveCamera(45, 10, 0.10, 250);
+
+camera.position.set(50, 42, 48);
+
+const renderer = new THREE.WebGLRenderer({antialias:true});
+
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+
+renderer.shadowMap.enabled = true;
+
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+mount.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+
+// CAMERA FOCUS ANIMATION
+let cameraAnimating = false;
+
+let cameraStart = new THREE.Vector3();
+let cameraEnd = new THREE.Vector3();
+
+let targetStart = new THREE.Vector3();
+let targetEnd = new THREE.Vector3();
+
+let cameraProgress = 0;
+
+function focusCamera(building) {
+
+    cameraAnimating = true;
+    cameraProgress = 0;
+
+    // Current camera position
+    cameraStart.copy(camera.position);
+
+    // Current OrbitControls target
+    targetStart.copy(controls.target);
+
+    // Building center
+    const targetPosition = new THREE.Vector3(
+        building.x,
+        building.h / 2,
+        building.z
+    );
+
+    targetEnd.copy(targetPosition);
+
+    // Camera destination
+    cameraEnd.set(
+        building.x + 15,
+        building.h + 12,
+        building.z + 18
+    );
+}
+
+controls.target.set(2,0,1); controls.enableDamping = true; controls.maxPolarAngle = Math.PI/2.05;
+
+controls.minDistance = 22; controls.maxDistance = 95;
+
+scene.add(new THREE.HemisphereLight(0xffffff,0x738b79,2));
+
+const sun = new THREE.DirectionalLight(0xffffff,2.2); sun.position.set(-25,45,20); sun.castShadow=true; scene.add(sun);
+
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(100,75),new THREE.MeshStandardMaterial({color:0xd5e6c8,roughness:1}));
+
+ground.rotation.x=-Math.PI/2; ground.position.y=-0.18; ground.receiveShadow=true; scene.add(ground);
+
+const roadMat = new THREE.MeshStandardMaterial({color:0xe8dfcc});
+
+function road(x,z,w,d){const m=new THREE.Mesh(new THREE.BoxGeometry(w,.08,d),roadMat);m.position.set(x,-.08,z);scene.add(m);}
+
+road(0,0,0,50); road(-22,0,5,48); road(24,0,5,48); road(2,-13,50,3); road(2,16,52,3);
+const green = new THREE.MeshStandardMaterial({color:0x8fbd7a});
+
+const lawn = new THREE.Mesh(new THREE.BoxGeometry(42,.12,28),green); lawn.position.set(3, -.08, 1); scene.add(lawn);
+
+const clickable=[];
+
+const labelCanvas = (text) => {
+  const c=document.createElement("canvas"); c.width=512;c.height=128;
+
+  const ctx=c.getContext("2d");ctx.fillStyle="rgba(250, 243, 243, 0.92)";ctx.fillRect(0,0,512,128);
+
+  ctx.fillStyle="#172b3d";ctx.font="bold 38px Arial";ctx.textAlign="center";ctx.textBaseline="middle";
+
+  const words=text.split(" ");let lines=[""];for(const word of words){let t=(lines[lines.length-1]+" "+word).trim();if(t.length>19)lines.push(word);else lines[lines.length-1]=t;}
+  lines.slice(0,2).forEach((line,i)=>ctx.fillText(line,256,48+i*40,480));
+
+  const tex=new THREE.CanvasTexture(c);const mat=new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false});
+  
+  const s=new THREE.Sprite(mat);s.scale.set(7,1.75,1);return s;
+};
+
+for(const b of buildings){
+  const group=new THREE.Group();group.position.set(b.x,0,b.z);group.userData.building=b;
+
+  const bodyMaterial=new THREE.MeshStandardMaterial({color:b.color,roughness:.8});
+
+  const body=new THREE.Mesh(new THREE.BoxGeometry(b.w,b.h,b.d),bodyMaterial);
+
+  body.position.y=b.h/2;body.castShadow=true;body.receiveShadow=true;group.add(body);
+
+  const roofShape = new THREE.Shape();
+
+roofShape.moveTo(-b.w / 2, 0);
+roofShape.lineTo(b.w / 2, 0);
+roofShape.lineTo(0, 2);
+roofShape.closePath();
+
+const roofGeometry = new THREE.ExtrudeGeometry(roofShape, {
+  depth: b.d + .25,
+  bevelEnabled: false
+});
+
+const roof = new THREE.Mesh(
+  roofGeometry,
+  new THREE.MeshStandardMaterial({
+    color: 0x174d35,
+    side: THREE.DoubleSide
+  })
+);
+
+roof.position.set(
+  0,
+  b.h,
+  -(b.d + .25) / 2
+);
+
+group.add(roof);
+  
+
+  const label=labelCanvas(b.name);label.position.set(0,b.h+2.1,0);group.add(label);
+  scene.add(group);clickable.push(body);b.mesh=body;b.originalColor=new THREE.Color(b.color);
+}
+
+function gate(x, z, label) {
+    const group = new THREE.Group();
+
+    const cream = new THREE.MeshStandardMaterial({
+        color: 0xf5e6c8
+    });
+
+    const metal = new THREE.MeshStandardMaterial({
+        color: 0x171717,
+        metalness: 0.5,
+        roughness: 0.5
+    });
+
+    // SIDE PILLARS
+    for (const side of [-1, 1]) {
+        const pillar = new THREE.Mesh(
+            new THREE.BoxGeometry(0.8, 6, 0.8),
+            cream
+        );
+
+        pillar.position.set(side * 5, 3, 0);
+        group.add(pillar);
+    }
+
+    // ARCH TOP
+    const points = [];
+
+    for (let i = 0; i <= 20; i++) {
+        const angle = Math.PI - (Math.PI * i / 20);
+
+        points.push(new THREE.Vector3(
+            5 * Math.cos(angle),
+            3.5 + 3 * Math.sin(angle),
+            0
+        ));
+    }
+
+    const archCurve = new THREE.CatmullRomCurve3(points);
+
+    const arch = new THREE.Mesh(
+        new THREE.TubeGeometry(archCurve, 40, 0.4, 8, false),
+        cream
+    );
+
+    group.add(arch);
+
+    // VERTICAL METAL BARS
+    for (let i = -4.3; i <= 4.3; i += 0.5) {
+        const bar = new THREE.Mesh(
+            new THREE.BoxGeometry(0.1, 3.5, 0.12),
+            metal
+        );
+
+        bar.position.set(i, 1.75, 0);
+        group.add(bar);
+    }
+
+    // HORIZONTAL METAL BARS
+    for (const y of [0.8, 2.8]) {
+        const rail = new THREE.Mesh(
+            new THREE.BoxGeometry(9, 0.12, 0.12),
+            metal
+        );
+
+        rail.position.set(0, y, 0);
+        group.add(rail);
+    }
+
+    // GATE LABEL
+    const s = labelCanvas(label);
+    s.position.set(0, 7.5, 0);
+    s.scale.set(5, 1.2, 1);
+
+    group.add(s);
+
+    group.position.set(x, 0, z);
+    scene.add(group);
+    
+    group.rotation.y = Math.PI / 2;
+}
+
+// GATES
+gate(-25, 16.7, "GATE 1");
+
+
+// ==================================
+// YOU ARE HERE MARKER - GATE 1
+// ==================================
+
+const youAreHere = new THREE.Group();
+
+// Marker position (inside Gate 1)
+youAreHere.position.set(-23, 0, 17);
+
+// Red marker material
+const markerMaterial = new THREE.MeshStandardMaterial({
+    color: 0xff0000,
+    emissive: 0xff0000,
+    emissiveIntensity: 1
+});
+
+// Marker pole
+const pole = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.08, 0.08, 2, 16),
+    markerMaterial
+);
+pole.position.y = 1;
+youAreHere.add(pole);
+
+// Red location pin head
+const pin = new THREE.Mesh(
+    new THREE.SphereGeometry(0.45, 24, 24),
+    markerMaterial
+);
+pin.position.y = 2.2;
+youAreHere.add(pin);
+
+// White center
+const center = new THREE.Mesh(
+    new THREE.SphereGeometry(0.16, 16, 16),
+    new THREE.MeshBasicMaterial({ color: 0xffffff })
+);
+center.position.y = 2.2;
+youAreHere.add(center);
+
+// Circular ground marker
+const circle = new THREE.Mesh(
+    new THREE.CircleGeometry(1.2, 40),
+    new THREE.MeshBasicMaterial({
+        color: 0xff3333,
+        transparent: true,
+        opacity: 0.45,
+        side: THREE.DoubleSide
+    })
+);
+circle.rotation.x = -Math.PI / 2;
+circle.position.y = 0.05;
+youAreHere.add(circle);
+
+// Floating label
+const locationLabel = labelCanvas("YOU ARE HERE");
+locationLabel.position.set(0, 3.5, 0);
+locationLabel.scale.set(5, 1.25, 1);
+youAreHere.add(locationLabel);
+
+// Add marker to campus
+scene.add(youAreHere);
+
+let markerTime = 0;
+
+const originalPinY = pin.position.y;
+const originalLabelY = locationLabel.position.y;
+
+
+
+
+
+
+
+const raycaster=new THREE.Raycaster(), pointer=new THREE.Vector2();
+
+let selected=null;
+let campusRoute = null;
+let campusDestinationMarker = null;
+
+
+function resize(){const w=mount.clientWidth,h=mount.clientHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h);}
+window.addEventListener("resize",resize);
+if ("ResizeObserver" in window) {
+  const mapResizeObserver = new ResizeObserver(resize);
+  mapResizeObserver.observe(mount);
+}
+resize();
+
+function animate(){
+
+    requestAnimationFrame(animate);
+
+    // Update animation time
+    markerTime += 0.03;
+
+    // Floating pin animation
+    pin.position.y = originalPinY + Math.sin(markerTime * 2) * 0.25;
+
+    // Keep white center attached to the pin
+    center.position.y = pin.position.y;
+
+    // Floating label animation
+    locationLabel.position.y = originalLabelY + Math.sin(markerTime * 2) * 0.25;
+
+    // Pulsing ground circle
+    const pulse = 1 + Math.sin(markerTime * 2) * 0.2;
+
+    circle.scale.set(pulse, pulse, 1);
+
+    circle.material.opacity = 0.25 + (Math.sin(markerTime * 2) + 1) * 0.15;
+    
+    // Smooth camera movement
+if (cameraAnimating) {
+
+    cameraProgress += 0.025;
+
+    const t = Math.min(cameraProgress, 1);
+
+    // Smooth easing
+    const smooth = t * t * (3 - 2 * t);
+
+    // Move camera
+    camera.position.lerpVectors(
+        cameraStart,
+        cameraEnd,
+        smooth
+    );
+
+    // Move camera focus
+    controls.target.lerpVectors(
+        targetStart,
+        targetEnd,
+        smooth
+    );
+
+    if (t >= 1) {
+        cameraAnimating = false;
+    }
+}
+
+    controls.update();
+    renderer.render(scene,camera);
+}
+
+animate();
+
+const list=document.querySelector("#destinationList");
+
+const interior=document.querySelector("#buildingView");
+
+const stage=document.querySelector(".map-stage");
+
+const ref=document.querySelector("#referenceView");
+
+const floor=document.querySelector("#floorPlan");
+
+const title=document.querySelector("#buildingTitle");
+
+const steps=document.querySelector("#routeSteps");
+
+const dest=document.querySelector("#routeDestination");
+
+const floorTabs=document.querySelector("#floorTabs");
+
+const preview=document.querySelector("#buildingPreview");
+
+
+const previewTitle=document.querySelector("#previewBuildingTitle");
+
+const previewImage=document.querySelector("#previewBuildingImage");
+
+const previewFallback=document.querySelector("#previewImageFallback");
+
+const goInside=document.querySelector("#goInsideButton");
+let activeFloor="ground";
+
+const floorNames={ground:"Ground Floor",second:"2nd Floor",third:"3rd Floor"};
+
+const selectedRooms=new Map();
+let selectedDestination = null;
+
+function roomsForFloor(b, key) {
+  if (b.floors) {
+    return b.floors[key] || [];
+  }
+
+  return key === "ground" ? b.rooms || [] : [];
+}
+
+
+function highlightBuilding(b){
+  buildings.forEach(item=>{
+    if(!item.mesh) return;
+    const active=item===b;
+    item.mesh.material.emissive.setHex(active?0xc00000:0x000000);
+    item.mesh.material.emissiveIntensity=active?0.48:0;
+    item.mesh.material.color.copy(item.originalColor);
+  });
+  
+}
+function selectBuilding(b){
+
+   selected=b;
+   highlightBuilding(b);
+
+   focusCamera(b);
+  interior.hidden=true;ref.hidden=true;stage.hidden=false;preview.hidden=false;
+  previewTitle.textContent=b.name;
+  previewImage.hidden = true;
+  previewFallback.hidden = false;
+  previewFallback.textContent = "Loading building photo...";
+
+  previewImage.onerror = () => {
+    previewImage.hidden = true;
+    previewFallback.hidden = false;
+    previewFallback.textContent =
+      `Image not found: assets/buildings/${b.id}.jpg`;
+  };
+
+  previewImage.onload = () => {
+    previewImage.hidden = false;
+    previewFallback.hidden = true;
+  };
+
+  previewImage.src = `./assets/buildings/${b.id}.jpg`;
+
+  previewImage.alt = `Photo of ${b.name}`;
+
+  goInside.onclick = () => showBuilding(b);
+}
+function showBuilding(b){
+  selected=b;stage.hidden=true;ref.hidden=true;interior.hidden=false;preview.hidden=true;
+  title.textContent=b.name;
+  renderFloor("ground");
+  
+  document.querySelector("#showCampusRoute").onclick=()=>showCampusDirections(b);
+  
+}
+function renderFloor(key){
+  activeFloor=key;floor.innerHTML="";
+  floorTabs.querySelectorAll("button").forEach(btn=>btn.classList.toggle("active",btn.dataset.floor===key));
+  const rooms=roomsForFloor(selected,key);
+  rooms.forEach((room,i)=>{
+    const el=document.createElement("button");el.type="button";el.className="room";
+    el.textContent=room;el.dataset.room=room;
+    el.style.gridColumn=(i%3+1);el.style.gridRow=(Math.floor(i/3)+1);
+    el.addEventListener("click",()=>selectRoom(room,el));floor.appendChild(el);
+  });
+  const corridor=document.createElement("div");corridor.className="room corridor";corridor.textContent="MAIN HALLWAY";floor.appendChild(corridor);
+  const first=floor.querySelector(".room:not(.corridor)");if(first)selectRoom(first.dataset.room,first);
+}
+function selectRoom(room, el) {
+  floor.querySelectorAll(".room").forEach(x =>
+    x.classList.remove("selected")
+  );
+
+  el.classList.add("selected");
+
+  // Save the selected destination
+  selectedDestination = {
+    building: selected,
+    room: room,
+    floor: activeFloor
+  };
+
+  dest.textContent =
+    `Destination: ${room} · ${floorNames[activeFloor]} · ${selected.name}`;
+
+  steps.innerHTML = `
+    <li>Start at Gate 1.</li>
+    <li>Follow the campus walkway to ${selected.name}.</li>
+    <li>Enter the building and follow the main hallway.</li>
+    <li>Reach ${room} on the ${floorNames[activeFloor]}.</li>
+  `;
+}
+function showCampusDirections(b){
+  dest.textContent=`Route: Gate 1 → ${b.name}`;
+  steps.innerHTML=`<li>Start at Gate 1.</li><li>Follow the marked campus walkway toward the central grounds.</li><li>Continue along the main path toward ${b.name}.</li><li>Enter through the main entrance, then follow the indoor corridor to your selected room.</li>`;
+}
+// Keep building selection on the campus view so the preview and GO INSIDE button appear.
+buildings.forEach(b=>{
+  const button=document.createElement("button");button.className="facility-item";button.type="button";
+  button.innerHTML=`<strong>${b.name}</strong><small>${b.type==="office"?"Office":b.type==="facility"?"Facility":"Classroom building"}</small>`;
+  button.addEventListener("click",()=>selectBuilding(b));list.appendChild(button);
+});
+renderer.domElement.addEventListener("click",e=>{
+  const r=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-r.left)/r.width)*2-1;pointer.y=-((e.clientY-r.top)/r.height)*2+1;
+  raycaster.setFromCamera(pointer,camera);const hits=raycaster.intersectObjects(clickable);
+  if(hits.length){const b=hits[0].object.parent.userData.building;selectBuilding(b);}
+});
+document.querySelector("#backToCampus").addEventListener("click",()=>{interior.hidden=true;stage.hidden=false;ref.hidden=true;preview.hidden=!selected;});
+floorTabs.querySelectorAll("button").forEach(btn=>btn.addEventListener("click",()=>renderFloor(btn.dataset.floor)));
+document.querySelector("#overviewBtn").addEventListener("click",()=>{interior.hidden=true;ref.hidden=true;stage.hidden=false;preview.hidden=!selected;});
+document.querySelector("#referenceBtn").addEventListener("click",()=>{interior.hidden=true;stage.hidden=true;preview.hidden=true;ref.hidden=false;});
+document.querySelector("#destinationSearch").addEventListener("input",e=>{
+  const q=e.target.value.toLowerCase();
+  [...list.children].forEach((el,i)=>{el.hidden=!buildings[i].name.toLowerCase().includes(q);});
+});
+document.querySelectorAll("[data-filter]").forEach(a=>a.addEventListener("click",()=>{
+  const type=a.dataset.filter;document.querySelector("#destinationSearch").value="";
+  [...list.children].forEach((el,i)=>el.hidden=type==="facility"?buildings[i].type!=="facility":type==="classroom"||type==="office"?buildings[i].type!==type:false);
+}));

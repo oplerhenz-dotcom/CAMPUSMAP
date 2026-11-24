@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CHS Campus Navigation System</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="campus-map.css">
+  <script type="importmap">
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}
+  </script>
+</head>
+<body class="dashboard-body">
+<header class="topbar">
+  <div class="brand">
+    <img src="assets/chs-logo.png" alt="CHS Logo" onerror="this.hidden=true">
+    <div><h2>COMMONWEALTH HIGH SCHOOL</h2><p>CAMPUS NAVIGATION SYSTEM</p></div>
+  </div>
+  <div class="user-info">
+    <span id="userDisplay">Welcome</span>
+    <button class="logout-btn" type="button" onclick="logoutUser()">LOG OUT</button>
+  </div>
+</header>
+
+
+<div class="sidebar-section">
+  <h3 class="finding-heading">FINDING THIS?</h3>
+
+  <select id="findingSelect" class="finding-select">
+    <option value="">Select a destination...</option>
+
+    <optgroup label="FACULTIES & DEPARTMENTS">
+      <option value="SHS Faculty">SHS Faculty</option>
+      <option value="Math Faculty">Math Faculty</option>
+      <option value="ESP Department">ESP Department</option>
+      <option value="MAPEH Faculty">MAPEH Faculty</option>
+      <option value="English Faculty 3">English Faculty 3</option>
+      <option value="English Faculty 2">English Faculty 2</option>
+      <option value="English Faculty 1">English Faculty 1</option>
+    </optgroup>
+
+    <optgroup label="LABORATORIES">
+      <option value="Physics Lab 1">Physics Lab 1</option>
+      <option value="Physics Lab 2">Physics Lab 2</option>
+      <option value="Chemistry Lab">Chemistry Lab</option>
+      <option value="Biology Lab 1">Biology Lab 1</option>
+      <option value="Biology Lab 2">Biology Lab 2</option>
+    </optgroup>
+
+    <optgroup label="OFFICES & FACILITIES">
+      <option value="Clinic">Clinic</option>
+      <option value="ALS Room">ALS Room</option>
+      <option value="Staff Room">Staff Room</option>
+      <option value="Assistant Principal Office">Assistant Principal Office</option>
+      <option value="Guidance">Guidance</option>
+    </optgroup>
+
+    <optgroup label="TECHNICAL VOCATIONAL">
+      <option value="FBS">FBS</option>
+      <option value="Hair Dressing">Hair Dressing</option>
+      <option value="Commercial Cooking">Commercial Cooking</option>
+      <option value="Bread and Pastry">Bread and Pastry</option>
+    </optgroup>
+  </select>
+</div>
+
+
+  <main class="map-section" id="campusMap">
+    
+<div class="campus-toolbar">
+
+  <div class="search-container">
+
+    <label class="sr-only" for="destinationSearch">
+      Search campus buildings or rooms
+    </label>
+
+    <input
+      type="search"
+      class="map-search"
+      id="destinationSearch"
+      placeholder="example/ castelo building 1 - room 5"
+      autocomplete="off"
+    >
+
+    <div
+      id="searchSuggestions"
+      class="search-suggestions"
+      hidden
+    ></div>
+
+  </div>
+
+  <button type="button" id="searchButton">
+    SEARCH
+  </button>
+
+</div>
+
+
+    <section class="map-stage" aria-label="Interactive campus map">
+      <div id="threeCanvas" class="three-canvas"></div>
+      <div class="map-hint">Drag to rotate · Scroll to zoom · Click a building to explore</div>
+      <aside id="buildingPreview" class="building-preview" hidden>
+        <button type="button" class="preview-close" aria-label="Close building preview" onclick="document.querySelector('#buildingPreview').hidden=true">×</button>
+        <img id="previewBuildingImage" alt="Selected building photo">
+        <div id="previewImageFallback" class="preview-image-fallback" hidden>Building photo will appear here</div>
+        <h3 id="previewBuildingTitle">Building name</h3>
+        <p>Selected campus building</p>
+        <button id="goInsideButton" class="directions-btn" type="button">GO INSIDE</button>
+      </aside>
+      <div class="map-legend">
+        <span><i class="legend-dot classroom"></i>Classrooms</span>
+        <span><i class="legend-dot office"></i>Offices</span>
+        <span><i class="legend-dot facility"></i>Facilities</span>
+      </div>
+    </section>
+
+    <section id="buildingView" class="building-view" hidden>
+      <div class="building-view-head">
+        <div><span class="eyebrow">BUILDING INTERIOR · SAMPLE FLOOR PLAN</span><h2 id="buildingTitle">Building</h2></div>
+        <button id="backToCampus" type="button" class="back-btn">← BACK TO CAMPUS</button>
+      </div>
+      <nav id="floorTabs" class="floor-tabs" aria-label="Choose a floor">
+        <button type="button" data-floor="ground" class="active">Ground Floor</button>
+        <button type="button" data-floor="second">2nd Floor</button>
+        <button type="button" data-floor="third">3rd Floor</button>
+
+        <button type="button" data-floor="fourth">4th Floor</button>
+
+        
+      </nav>
+      <div class="interior-layout">
+        <div id="floorPlan" class="floor-plan"></div>
+        <aside class="route-panel">
+          <h3>Directions</h3>
+          <p id="routeDestination">Select a room to see directions.</p>
+          <ol id="routeSteps"><li>Choose a room on the floor plan.</li></ol>
+          <button id="showCampusRoute" type="button" class="directions-btn">SHOW ROUTE FROM GATE 1</button>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  
+
+<script src="js/app.js"></script>
+<script type="module" src="js/campus-map.js"></script>
+</body>
+</html>

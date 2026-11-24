@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHS Campus Navigation System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="login-body">
+
+    <header class="login-header">
+        <img src="assets/chs-logo.png" alt="CHS Logo" onerror="this.hidden=true">
+        <div>
+            <h1>COMMONWEALTH HIGH SCHOOL</h1>
+            <p>CAMPUS NAVIGATION SYSTEM</p>
+        </div>
+    </header>
+
+    <main class="login-container">
+        <section class="welcome-panel">
+            <p class="school-tag">WELCOME TO</p>
+            <h2>CHS CAMPUS<br>NAVIGATION</h2>
+            <p>
+                Explore Commonwealth High School.
+                Find classrooms, offices, laboratories,
+                and other campus facilities.
+            </p>
+            <div class="welcome-decoration" aria-hidden="true">CHS</div>
+        </section>
+
+        <section class="login-panel">
+            <img src="assets/chs-logo.png" class="login-logo"
+                 alt="School Logo" onerror="this.hidden=true">
+
+            <h2>USER LOGIN</h2>
+            <p class="subtext">Enter your information to continue</p>
+
+            <!-- Form-->
+            <form id="loginForm">
+                <label for="userType">USER TYPE</label>
+                <select id="userType" required>
+                    <option value="">Select User Type</option>
+                    <option value="Student">Student</option>
+                    <option value="Guardian">Guardian</option>
+                    <option value="Teacher">Teacher</option>
+                </select>
+
+                <div id="studentFields" hidden>
+                    <label for="grade">GRADE LEVEL</label>
+                    <select id="grade">
+                        <option value="">Select Grade</option>
+                        <option>Grade 7</option>
+                        <option>Grade 8</option>
+                        <option>Grade 9</option>
+                        <option>Grade 10</option>
+                        <option>Grade 11</option>
+                        <option>Grade 12</option>
+                    </select>
+
+                    <label for="section">SECTION</label>
+                    <input type="text" id="section" placeholder="Enter your section">
+                </div>
+
+                <label for="fullName">FULL NAME</label>
+                <input type="text" id="fullName"
+                       placeholder="Enter your complete name"
+                       autocomplete="name" required>
+
+                <button type="submit" class="enter-btn">ENTER SYSTEM →</button>
+            </form>
+
+            <!-- end of form -->
+
+
+
+
+            <p class="admin-link">
+                <a href="admin.html">Administrator Login</a>
+            </p>
+
+            <p class="copyright">© 2026 Commonwealth High School</p>
+        </section>
+    </main>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
